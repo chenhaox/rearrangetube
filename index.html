@@ -243,7 +243,7 @@
             border-radius: 5px;
             padding: 10px;
             flex-grow: 1;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
         }
 
         .thumbnails-container {
@@ -261,12 +261,29 @@
         }
 
         /* Use smaller circles for tubes to visualize them in the thumbnail */
-        .thumbnail-red { background-color: #ff6347; }
-        .thumbnail-blue { background-color: #4682b4; }
-        .thumbnail-green { background-color: #32cd32; }
-        .thumbnail-yellow { background-color: #ffeb3b; }
-        .thumbnail-purple { background-color: #8a2be2; }
-        .thumbnail-orange { background-color: #ff8c00; }
+        .thumbnail-red {
+            background-color: #ff6347;
+        }
+
+        .thumbnail-blue {
+            background-color: #4682b4;
+        }
+
+        .thumbnail-green {
+            background-color: #32cd32;
+        }
+
+        .thumbnail-yellow {
+            background-color: #ffeb3b;
+        }
+
+        .thumbnail-purple {
+            background-color: #8a2be2;
+        }
+
+        .thumbnail-orange {
+            background-color: #ff8c00;
+        }
 
     </style>
 </head>
@@ -364,11 +381,12 @@
             }
         }
 
-    // Helper function to check patterns
+        // Helper function to check patterns
         function checkPattern(idxArray, referenceState, referenceGoal) {
             if (idxArray.length === 0) return false;
-                return idxArray.every(([r, c]) => referenceGoal[r][c] === referenceState[r][c]);
+            return idxArray.every(([r, c]) => referenceGoal[r][c] === referenceState[r][c]);
         }
+
         const is_move_to_pattern = checkPattern(move_to_idx, state_next, goal_pattern);
         const is_move_out_pattern = checkPattern(move_from_idx, state_current, goal_pattern);
         let reward = 0;
@@ -411,10 +429,10 @@
             init: init_rack,
             goal: goal_pattern,
             history: move_history
-            };
+        };
         // Pretty-printing the JSON with an indentation of 2 spaces
         const dataStr = JSON.stringify(historyData, null, 2);
-        const blob = new Blob([dataStr], { type: "application/json" });
+        const blob = new Blob([dataStr], {type: "application/json"});
         const url = URL.createObjectURL(blob);
         // Creating a download link and triggering the download
         const a = document.createElement('a');
@@ -541,8 +559,31 @@
         return {movableCells, fillableCells};
     }
 
-    let initialRack = {{ rack | tojson }};
-    let goalPattern = {{ goal_pattern | tojson }};
+    let initialRackList = [];
+    let goalPatternList = [];
+
+    //// Fetch JSON files for initialRack and goalPattern from GitHub
+    function fetchDataFromGitHub() {
+        const initialRackUrl = 'https://raw.githubusercontent.com/chenhaox/rearrangetube/refs/heads/main/state_list.json';
+        const goalPatternUrl = 'https://raw.githubusercontent.com/chenhaox/rearrangetube/refs/heads/main/goal_list.json';
+
+        Promise.all([fetch(initialRackUrl), fetch(goalPatternUrl)])
+            .then(responses => Promise.all(responses.map(response => response.json())))
+            .then(([initialRackData, goalPatternData]) => {
+                initialRackList = initialRackData;
+                goalPatternList = goalPatternData;
+                const randomRackIndex = Math.floor(Math.random() * initialRackList.length);
+                const randomGoalIndex = Math.floor(Math.random() * goalPatternList.length);
+                initialRack = initialRackData[randomRackIndex];
+                goalPattern = goalPatternData[randomGoalIndex];
+                renderRack();
+            })
+            .catch(error => {
+                console.error('Error fetching data from GitHub:', error);
+            });
+    }
+
+    fetchDataFromGitHub(); // Call this function when you want to load the data
     // Add this near the existing variables
     let moveHistory = [];
 
@@ -675,10 +716,9 @@
                 const reward = getRewardExp(finished, state_current, state_next, goalPattern);
                 // Record the move
                 const moveRecord = {
-                    from: { row: selRow, col: selCol },
-                    to: { row: row, col: col },
+                    from: {row: selRow, col: selCol},
+                    to: {row: row, col: col},
                     timestamp: new Date().toISOString(),
-                    reward: reward,
                     stateBefore: state_current,
                     stateAfter: state_next
                 };
@@ -742,7 +782,6 @@
     }
 
 
-
     // Add a function to update the History UI
     // Update the updateHistoryUI function to remove the index and enlarge the Before/After thumbnails
     // Update the updateHistoryUI function to place before/after thumbnails inside the moveElement div
@@ -762,7 +801,6 @@
         moveElement.innerHTML = `
             From: (${moveRecord.from.row}, ${moveRecord.from.col})<br>
             To: (${moveRecord.to.row}, ${moveRecord.to.col})<br>
-            Reward: <span style="color: ${moveRecord.reward >= 0 ? 'green' : 'red'}">${moveRecord.reward}</span><br>
             <small>${moveRecord.timestamp}</small>
         `;
 
@@ -797,36 +835,38 @@
     }
 
     document.getElementById('resetBtn').addEventListener('click', function () {
-    selectedCell = null;
+        selectedCell = null;
 
-    fetch('/reset')
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
+        // Reset the rack to the initial state
+        document.getElementById('resetBtn').addEventListener('click', function () {
+            selectedCell = null;
+
+            // Check if data is loaded
+            if (!initialRackList || initialRackList.length === 0 || !goalPatternList || goalPatternList.length === 0) {
+                console.error('Data not loaded yet');
+                showErrorMessage('Data not loaded yet');
+                return;
             }
-            return response.json();
-        })
-        .then(data => {
-            if (data.error) {
-                throw new Error(data.error);
-            }
-            initialRack = data.rack;
-            goalPattern = data.goal_pattern;
+
+            // Select random indices
+            const randomRackIndex = Math.floor(Math.random() * initialRackList.length);
+            const randomGoalIndex = Math.floor(Math.random() * goalPatternList.length);
+
+            // Update initial and goal patterns
+            initialRack = initialRackList[randomRackIndex];
+            goalPattern = goalPatternList[randomGoalIndex];
+
             renderRack();
 
-            // Reset the move history
+            // Reset move history
             moveHistory = [];
             const historyContainer = document.getElementById('historyContainer');
             if (historyContainer) {
                 historyContainer.innerHTML = '';
             }
             console.log('Move History Reset');
-        })
-        .catch(error => {
-            console.error('Error fetching reset data:', error);
-            showErrorMessage(error.message || 'Invalid move!');
         });
-});
+    });
     renderRack();
 </script>
 </body>
