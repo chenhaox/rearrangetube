@@ -1,873 +1,251 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rack Arrangement Simulation</title>
-    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        /* Adjust some styling to make the page more visually appealing */
-        body {
-            background: linear-gradient(to right, #ffffff, #e9ecef);
-            font-family: Arial, sans-serif;
-        }
+  <meta charset="utf-8">
+  <!-- Meta tags for social media banners, these should be filled in appropriatly as they are your "business card" -->
+  <!-- Replace the content tag with appropriate information -->
+  <meta name="description" content="DESCRIPTION META TAG">
+  <meta property="og:title" content="SOCIAL MEDIA TITLE TAG"/>
+  <meta property="og:description" content="SOCIAL MEDIA DESCRIPTION TAG TAG"/>
+  <meta property="og:url" content="URL OF THE WEBSITE"/>
+  <!-- Path to banner image, should be in the path listed below. Optimal dimenssions are 1200X630-->
+  <meta property="og:image" content="static/image/your_banner_image.png" />
+  <meta property="og:image:width" content="1200"/>
+  <meta property="og:image:height" content="630"/>
 
-        h2, h3 {
-            margin-bottom: 20px;
-            font-weight: 600;
-        }
 
-        .rack-cell {
-            border: 3px solid #000;
-            height: 60px;
-            width: 60px;
-            text-align: center;
-            cursor: pointer;
-            position: relative;
-            margin: 5px;
-            display: inline-block;
-            box-sizing: border-box;
-        }
+  <meta name="twitter:title" content="TWITTER BANNER TITLE META TAG">
+  <meta name="twitter:description" content="TWITTER BANNER DESCRIPTION META TAG">
+  <!-- Path to banner image, should be in the path listed below. Optimal dimenssions are 1200X600-->
+  <meta name="twitter:image" content="static/images/your_twitter_banner_image.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <!-- Keywords for your paper to be indexed by-->
+  <meta name="keywords" content="KEYWORDS SHOULD BE PLACED HERE">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
 
-        .goal-background-1 {
-            background-color: rgba(255, 99, 71, 0.2);
-        }
 
-        .goal-background-2 {
-            background-color: rgba(70, 130, 180, 0.2);
-        }
+  <title>Robotic Test Tube Rearrangement Using Combined Reinforcement Learning and Motion Planning in a Closed Loop</title>
+<!--  <link rel="icon" type="image/x-icon" href="static/images/favicon.ico">-->
+  <link href="https://fonts.googleapis.com/css?family=Google+Sans|Noto+Sans|Castoro"
+  rel="stylesheet">
 
-        .goal-background-3 {
-            background-color: rgba(50, 205, 50, 0.2);
-        }
+  <link rel="stylesheet" href="static/css/bulma.min.css">
+  <link rel="stylesheet" href="static/css/bulma-carousel.min.css">
+  <link rel="stylesheet" href="static/css/bulma-slider.min.css">
+  <link rel="stylesheet" href="static/css/fontawesome.all.min.css">
+  <link rel="stylesheet"
+  href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
+  <link rel="stylesheet" href="static/css/index.css">
 
-        .goal-background-4 {
-            background-color: rgba(255, 235, 59, 0.2);
-        }
-
-        .goal-background-5 {
-            background-color: rgba(138, 43, 226, 0.2);
-        }
-
-        .goal-background-6 {
-            background-color: rgba(255, 140, 0, 0.2);
-        }
-
-        .tube.selected {
-            border: 4px solid #ffcc00;
-            box-shadow: 0 0 10px rgba(255, 204, 0, 0.7);
-            animation: breathing 1.5s ease-in-out infinite;
-        }
-
-        #moveErrorMessage {
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background-color: #f8d7da;
-            color: #721c24;
-            padding: 10px 20px;
-            border-radius: 5px;
-            display: none;
-            z-index: 1000;
-        }
-
-        #successMessage {
-            position: fixed;
-            top: 60px; /* Positioned below the error message */
-            left: 50%;
-            transform: translateX(-50%);
-            background-color: #d4edda;
-            color: #155724;
-            padding: 10px 20px;
-            border-radius: 5px;
-            display: none;
-            z-index: 1000;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-        }
-
-        @keyframes breathing {
-            0% {
-                transform: translate(-50%, -50%) scale(1);
-            }
-            50% {
-                transform: translate(-50%, -50%) scale(1.1);
-            }
-            100% {
-                transform: translate(-50%, -50%) scale(1);
-            }
-        }
-
-        .tube {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 60%;
-            height: 60%;
-            border-radius: 50%;
-            z-index: 10;
-        }
-
-        .tube.red {
-            background-color: #ff6347;
-        }
-
-        .tube.blue {
-            background-color: #4682b4;
-        }
-
-        .tube.green {
-            background-color: #32cd32;
-        }
-
-        .tube.yellow {
-            background-color: #ffeb3b;
-        }
-
-        .tube.purple {
-            background-color: #8a2be2;
-        }
-
-        .tube.orange {
-            background-color: #ff8c00;
-        }
-
-        .tube.white {
-            background-color: white;
-        }
-
-        .rack-container {
-            display: grid;
-            grid-template-columns: repeat(6, 60px);
-            grid-template-rows: repeat(6, 60px);
-            gap: 5px;
-            max-width: 400px;
-            margin: 0 auto;
-        }
-
-        .btn-primary {
-            background-color: #007bff;
-            border: none;
-            border-radius: 20px;
-            padding: 10px 20px;
-        }
-
-        .btn-primary:hover {
-            background-color: #0056b3;
-        }
-
-        /* Highlight for movable tubes */
-        .highlight-movable {
-            position: relative;
-            border: 3px dashed #ffc107;
-        }
-
-        .highlight-movable::after {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 20px;
-            height: 20px;
-            background-color: rgba(255, 193, 7, 0.5);
-            border-radius: 50%;
-            transform: translate(-50%, -50%);
-        }
-
-        .highlight-destination {
-            border: 3px dashed #28a745;
-            position: relative;
-        }
-
-        .highlight-destination::after {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 20px;
-            height: 20px;
-            background-color: rgba(40, 167, 69, 0.5);
-            border-radius: 50%;
-            transform: translate(-50%, -50%);
-        }
-
-        /* Additional styling for the thumbnails */
-        .thumbnail-grid {
-            display: grid;
-            grid-template-columns: repeat(6, 12px);
-            grid-template-rows: repeat(6, 12px);
-            gap: 3px;
-            margin-top: 10px;
-        }
-
-        .thumbnail-cell {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            background-color: #ccc; /* Default empty cell color */
-            position: relative;
-        }
-
-        .moved-tube::after {
-            content: "";
-            position: absolute;
-            top: -3px;
-            left: -3px;
-            width: 18px;
-            height: 18px;
-            border-radius: 50%;
-            border: 2px solid #f39c12;
-            box-sizing: border-box;
-        }
-
-        /* Increase the label font size for Before and After */
-        .thumbnail-label {
-            font-size: 16px;
-            font-weight: bold;
-            margin-bottom: 10px;
-            text-align: center;
-        }
-
-        /* Remove move number balloon and adjust styling */
-        .move-header {
-            display: flex;
-            flex-direction: column;
-            margin-bottom: 10px;
-            align-items: flex-start;
-        }
-
-        .move-element {
-            background: #fff;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            padding: 10px;
-            flex-grow: 1;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-        }
-
-        .thumbnails-container {
-            display: flex;
-            gap: 40px;
-            margin-top: 20px;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .before-after-wrapper {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        /* Use smaller circles for tubes to visualize them in the thumbnail */
-        .thumbnail-red {
-            background-color: #ff6347;
-        }
-
-        .thumbnail-blue {
-            background-color: #4682b4;
-        }
-
-        .thumbnail-green {
-            background-color: #32cd32;
-        }
-
-        .thumbnail-yellow {
-            background-color: #ffeb3b;
-        }
-
-        .thumbnail-purple {
-            background-color: #8a2be2;
-        }
-
-        .thumbnail-orange {
-            background-color: #ff8c00;
-        }
-
-    </style>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script src="https://documentcloud.adobe.com/view-sdk/main.js"></script>
+  <script defer src="static/js/fontawesome.all.min.js"></script>
+  <script src="static/js/bulma-carousel.min.js"></script>
+  <script src="static/js/bulma-slider.min.js"></script>
+  <script src="static/js/index.js"></script>
 </head>
 <body>
-<div id="moveErrorMessage">Invalid move!</div>
-<div id="successMessage">Congratulations! All tubes are in their goal positions.</div>
 
-<div class="container-fluid">
-    <div class="row">
-        <!-- Left side: Move history and rewards -->
-        <div class="col-md-3" style="margin-top: 20px;">
-            <h3 style="margin-bottom: 20px; font-weight: 600;">Move History</h3>
-            <div id="historyContainer" style="
-                max-height: 500px;
-                overflow-y: auto;
-                border: 1px solid #ccc;
-                padding: 20px;
-                background-color: #ffffff;
-                border-radius: 5px;
-                box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                <!-- Move history and rewards will be appended here -->
-            </div>
-        </div>
 
-        <!-- Right side: Existing layout -->
-        <div class="col-md-9">
-            <div class="container mt-5">
-                <h2 class="text-center">Rack Arrangement Task</h2>
-                <div class="row justify-content-center">
-                    <div id="rack-container" class="rack-container">
-                        <!-- Grid cells will be inserted here by JavaScript -->
-                    </div>
-                </div>
-                <div class="text-center mt-4">
-                    <button class="btn btn-primary" id="resetBtn">Reset to Initial State</button>
-                </div>
+  <section class="hero">
+    <div class="hero-body">
+      <div class="container is-max-desktop">
+        <div class="columns is-centered">
+          <div class="column has-text-centered">
+            <h1 class="title is-1 publication-title">Robotic Test Tube Rearrangement Using Combined Reinforcement Learning and Motion Planning in a Closed Loop</h1>
+            <div class="is-size-5 publication-authors">
+              <!-- Paper authors -->
+              <span class="author-block">
+                <a href="FIRST AUTHOR PERSONAL LINK" target="_blank">Hao Chen</a><sup>1</sup>,</span>
+              <span class="author-block">
+                  <a href="SECOND AUTHOR PERSONAL LINK" target="_blank">Yu Tang</a><sup>2</sup>,</span>
+                 <span class="author-block">
+                  <a href="SECOND AUTHOR PERSONAL LINK" target="_blank">Weiwei Wan</a><sup>2</sup>,</span>
+                  <span class="author-block">
+                    <a href="THIRD AUTHOR PERSONAL LINK" target="_blank">Masaki Matsushita</a><sup>3</sup>,</span>
+                  </span>
+                <span class="author-block">
+                    <a href="THIRD AUTHOR PERSONAL LINK" target="_blank">Jun Takahashi</a><sup>3</sup>,</span>
+                  </span>
+                  <span class="author-block">
+                    <a href="THIRD AUTHOR PERSONAL LINK" target="_blank">Takeyuki Kotaka</a><sup>3</sup>,</span>
+                  </span>
+                  <span class="author-block">
+                    <a href="THIRD AUTHOR PERSONAL LINK" target="_blank">Kensuke Harada</a><sup>2</sup>
+                  </span>
+                  </div>
+
+                  <div class="is-size-5 publication-authors">
+                    <span class="author-block"><sup>1 </sup>Fujian Agriculture and Forestry University, China</span><br>
+                    <span class="author-block"><sup>2 </sup>Graduate School of Engineering Science, Osaka University, Japan</span><br>
+                    <span class="author-block"><sup>3 </sup>H.U. Group Research Institute G.K., Japan</span>
+                    <br><span class="author-block">Under Review</span>
+<!--                    <span class="eql-cntrb"><small><br><sup>*</sup>Indicates Equal Contribution</small></span>-->
+                  </div>
+
+                  <div class="column has-text-centered">
+                    <div class="publication-links">
+                         <!-- Arxiv PDF link -->
+                      <span class="link-block">
+                        <a href="https://arxiv.org/abs/2401.09772" target="_blank"
+                        class="external-link button is-normal is-rounded is-dark">
+                        <span class="icon">
+                          <i class="fas fa-file-pdf"></i>
+                        </span>
+                        <span>Paper</span>
+                      </a>
+                    </span>
+
+                    <!-- Supplementary PDF link -->
+<!--                    <span class="link-block">-->
+<!--                      <a href="static/pdfs/supplementary_material.pdf" target="_blank"-->
+<!--                      class="external-link button is-normal is-rounded is-dark">-->
+<!--                      <span class="icon">-->
+<!--                        <i class="fas fa-file-pdf"></i>-->
+<!--                      </span>-->
+<!--                      <span>Supplementary</span>-->
+<!--                    </a>-->
+<!--                  </span>-->
+
+                  <!-- Github link -->
+<!--                  <span class="link-block">-->
+<!--                    <a href="https://github.com/YOUR REPO HERE" target="_blank"-->
+<!--                    class="external-link button is-normal is-rounded is-dark">-->
+<!--                    <span class="icon">-->
+<!--                      <i class="fab fa-github"></i>-->
+<!--                    </span>-->
+<!--                    <span>Code</span>-->
+<!--                  </a>-->
+<!--                </span>-->
+
+                <!-- ArXiv abstract Link -->
+                <span class="link-block">
+                  <a href="./demo" target="_blank"
+                  class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon">
+                    <i class="ai ai-arxiv"></i>
+                  </span>
+                  <span>Demo</span>
+                </a>
+              </span>
             </div>
+          </div>
         </div>
+      </div>
     </div>
-</div>
+  </div>
+</section>
+
+
+<!-- Teaser video-->
+<!--<section class="hero teaser">-->
+<!--  <div class="container is-max-desktop">-->
+<!--    <div class="hero-body">-->
+<!--      <video poster="" id="tree" autoplay controls muted loop height="100%">-->
+<!--        &lt;!&ndash; Your video here &ndash;&gt;-->
+<!--        <source src="static/videos/banner_video.mp4"-->
+<!--        type="video/mp4">-->
+<!--      </video>-->
+<!--      <h2 class="subtitle has-text-centered">-->
+<!--        Aliquam vitae elit ullamcorper tellus egestas pellentesque. Ut lacus tellus, maximus vel lectus at, placerat pretium mi. Maecenas dignissim tincidunt vestibulum. Sed consequat hendrerit nisl ut maximus.-->
+<!--      </h2>-->
+<!--    </div>-->
+<!--  </div>-->
+<!--</section>-->
+<!-- End teaser video -->
+
+<!-- Paper abstract -->
+<section class="section hero is-light">
+  <div class="container is-max-desktop">
+    <div class="columns is-centered has-text-centered">
+      <div class="column is-four-fifths">
+        <h2 class="title is-3">Abstract</h2>
+        <div class="content has-text-justified">
+          <p>
+            A combined Reinforcement Learning (RL) and motion planning framework is proposed in this paper to address a multi-class in-rack test tube rearrangement problem. The RL works at the task level to plan a sequence of swap actions while ignoring the details of robotic motion. The motion planning works at the motion level to plan detailed robotic pick-and-place motion based on the action sequences obtained at the task level. The task-level and motion-level are combined in a closed loop with the help of a condition set maintained for each rack slot, which allows the framework to perform replanning efficiently and thus effectively find solutions in the presence of failures. In particular, for RL, the framework leverages a distributed deep Q learning structure with the Dueling Double Deep Q Network (D3QN) to learn policies from training data amplified by an A${}^\star$ based post-processing technique. The D3QN and distributed learning help increase training efficiency. The post-processing helps salvage failed action sequences and remove redundancy, thus making training data more effective. Simulations and real-world studies are carried out in the experiments to understand the performance of the proposed framework. The results verify the advantages of the RL and post-processing, and show that the closed-loop combination improves robustness. The framework is ready to incorporate various sensory feedbacks, as demonstrated by real-world studies.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+<!-- End paper abstract -->
+
+
+<!-- Youtube video -->
+<section class="hero is-small is-light">
+  <div class="hero-body">
+    <div class="container">
+      <!-- Paper video. -->
+      <h2 class="title is-3">Video Demonstration</h2>
+      <div class="columns is-centered has-text-centered">
+        <div class="column is-four-fifths">
+          
+          <div class="publication-video">
+            <!-- Youtube embed code here -->
+            <iframe src="https://www.youtube.com/embed/8iLUqkYvS-E" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+<!-- End youtube video -->
+
+
+<!-- Paper poster -->
+<section class="hero is-small is-light">
+<!--  <div class="hero-body">-->
+<!--    <div class="container">-->
+<!--      <h2 class="title">Poster</h2>-->
+
+<!--      <iframe  src="static/pdfs/sample.pdf" width="100%" height="550">-->
+<!--          </iframe>-->
+<!--        -->
+<!--      </div>-->
+<!--    </div>-->
+<!--  </section>-->
+<!--End paper poster -->
+
+
+<!--BibTex citation -->
+  <section class="section" id="BibTeX">
+    <div class="container is-max-desktop content">
+      <h2 class="title">BibTeX</h2>
+      <pre><code>@article{chen2024robotic,
+  title={Robotic Test Tube Rearrangement Using Combined Reinforcement Learning and Motion Planning},
+  author={Chen, Hao and Wan, Weiwei and Matsushita, Masaki and Kotaka, Takeyuki and Harada, Kensuke},
+  journal={arXiv preprint arXiv:2401.09772},
+  year={2024}
+}</code></pre>
+    </div>
+</section>
+<!--End BibTex citation -->
+
+
+<!--  <footer class="footer">-->
+<!--  <div class="container">-->
+<!--    <div class="columns is-centered">-->
+<!--      <div class="column is-8">-->
+<!--        <div class="content">-->
+
+<!--          <p>-->
+<!--            This page was built using the <a href="https://github.com/eliahuhorwitz/Academic-project-page-template" target="_blank">Academic Project Page Template</a> which was adopted from the <a href="https://nerfies.github.io" target="_blank">Nerfies</a> project page.-->
+<!--            You are free to borrow the source code of this website, we just ask that you link back to this page in the footer. <br> This website is licensed under a <a rel="license"  href="http://creativecommons.org/licenses/by-sa/4.0/" target="_blank">Creative-->
+<!--            Commons Attribution-ShareAlike 4.0 International License</a>.-->
+<!--          </p>-->
 
-<script>
-    // Movement constraint masks
-    const MASKS = {
-        UCBC: [[0, 1, 0], [0, 0, 0], [0, 1, 0]],
-        CRCL: [[0, 0, 0], [1, 0, 1], [0, 0, 0]],
-        UL: [[1, 1, 1], [1, 0, 0], [1, 0, 0]],
-        UR: [[1, 1, 1], [0, 0, 1], [0, 0, 1]],
-        BL: [[1, 0, 0], [1, 0, 0], [1, 1, 1]],
-        BR: [[0, 0, 1], [0, 0, 1], [1, 1, 1]]
-    };
+<!--        </div>-->
+<!--      </div>-->
+<!--    </div>-->
+<!--  </div>-->
+<!--</footer>-->
 
-    // Implement the reward calculation in JavaScript as described in the Python code
-    function isDone(state, goal) {
-        for (let i = 0; i < state.length; i++) {
-            for (let j = 0; j < state[i].length; j++) {
-                if (state[i][j] !== goal[i][j]) {
-                    return false;
-                }
-            }
-        }
-        return true;
-    }
+<!-- Statcounter tracking code -->
+  
+<!-- You can add a tracker to track page visits by creating an account at statcounter.com -->
 
-    function getRewardExp(is_finished, state_current, state_next, goal_pattern) {
-        // Convert arrays for easier comparison
-        // state_current, state_next, goal_pattern are already arrays of arrays
-        if (is_finished) {
-            if (isDone(state_next, goal_pattern)) {
-                return 20;
-            } else {
-                return -20;
-            }
-        }
+    <!-- End of Statcounter Code -->
 
-        // Calculate move_map = state_next - state_current
-        const move_map = [];
-        for (let r = 0; r < state_next.length; r++) {
-            move_map[r] = [];
-            for (let c = 0; c < state_next[r].length; c++) {
-                move_map[r][c] = state_next[r][c] - state_current[r][c];
-            }
-        }
-
-        // Identify move_from and move_to positions
-        let move_from_idx = [];
-        let move_to_idx = [];
-        for (let r = 0; r < move_map.length; r++) {
-            for (let c = 0; c < move_map[r].length; c++) {
-                if (move_map[r][c] > 0) {
-                    move_to_idx.push([r, c]);
-                } else if (move_map[r][c] < 0) {
-                    move_from_idx.push([r, c]);
-                }
-            }
-        }
-
-        // Helper function to check patterns
-        function checkPattern(idxArray, referenceState, referenceGoal) {
-            if (idxArray.length === 0) return false;
-            return idxArray.every(([r, c]) => referenceGoal[r][c] === referenceState[r][c]);
-        }
-
-        const is_move_to_pattern = checkPattern(move_to_idx, state_next, goal_pattern);
-        const is_move_out_pattern = checkPattern(move_from_idx, state_current, goal_pattern);
-        let reward = 0;
-        if (is_move_to_pattern && !is_move_out_pattern) {
-            reward = 1;
-        } else if (is_move_out_pattern && !is_move_to_pattern) {
-            reward = -2;
-        } else {
-            reward = -1;
-        }
-        // move to other goal
-        for (let [r, c] of move_to_idx) {
-            if (goal_pattern[r][c] > 0 && goal_pattern[r][c] !== state_next[r][c]) {
-                reward -= 1;
-            }
-        }
-        // move out of other goal
-        if (move_from_idx.length > 0 && move_to_idx.length > 0) {
-            for (let [r, c] of move_from_idx) {
-                if (goal_pattern[r][c] > 0 && goal_pattern[r][c] !== state_current[r][c]) {
-                    let movedToOtherGoal = false;
-                    for (let [rr, cc] of move_to_idx) {
-                        if (goal_pattern[rr][cc] > 0 && goal_pattern[rr][cc] !== state_next[rr][cc]) {
-                            movedToOtherGoal = true;
-                            break;
-                        }
-                    }
-                    if (!movedToOtherGoal) {
-                        reward += 1;
-                    }
-                }
-            }
-        }
-        return reward;
-    }
-
-    // Add this function within your <script> tag
-    function downloadMoveHistory(init_rack, goal_pattern, move_history) {
-        const historyData = {
-            init: init_rack,
-            goal: goal_pattern,
-            history: move_history
-        };
-        // Pretty-printing the JSON with an indentation of 2 spaces
-        const dataStr = JSON.stringify(historyData, null, 2);
-        const blob = new Blob([dataStr], {type: "application/json"});
-        const url = URL.createObjectURL(blob);
-        // Creating a download link and triggering the download
-        const a = document.createElement('a');
-        a.href = url;
-        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-        a.download = `move_history_${timestamp}.json`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        // Revoke the object URL after the download
-        URL.revokeObjectURL(url);
-    }
-
-    function padMatrix(matrix, padWidth = 2) {
-        const padded = Array.from({length: matrix.length + 2 * padWidth}, () =>
-            Array(matrix[0].length + 2 * padWidth).fill(0)
-        );
-
-        for (let i = 0; i < matrix.length; i++) {
-            for (let j = 0; j < matrix[0].length; j++) {
-                padded[i + padWidth][j + padWidth] = matrix[i][j];
-            }
-        }
-
-        return padded;
-    }
-
-    function correlate2d(matrix, mask) {
-        const paddedMatrix = padMatrix(matrix);
-        const result = Array.from({length: matrix.length}, () =>
-            Array(matrix[0].length).fill(0)
-        );
-
-        for (let i = 0; i < result.length; i++) {
-            for (let j = 0; j < result[0].length; j++) {
-                let sum = 0;
-                for (let mi = 0; mi < mask.length; mi++) {
-                    for (let mj = 0; mj < mask[0].length; mj++) {
-                        sum += paddedMatrix[i + mi][j + mj] * mask[mi][mj];
-                    }
-                }
-                result[i][j] = sum;
-            }
-        }
-
-        return result;
-    }
-
-    function checkConstraintMask(subMatrix, mask) {
-        return mask.every((row, i) =>
-            row.every((val, j) =>
-                val === 0 || (val === 1 && subMatrix[i][j] === 0)
-            )
-        );
-    }
-
-    function checkGoalCompletion() {
-        for (let row = 0; row < initialRack.length; row++) {
-            for (let col = 0; col < initialRack[row].length; col++) {
-                if (initialRack[row][col] !== goalPattern[row][col]) {
-                    return false;
-                }
-            }
-        }
-        return true;
-    }
-
-    function getSubMatrix(matrix, centerRow, centerCol, maskSize) {
-        const offset = Math.floor(maskSize / 2);
-        const subMatrix = Array.from({length: maskSize}, () => Array(maskSize).fill(0));
-
-        for (let i = 0; i < maskSize; i++) {
-            for (let j = 0; j < maskSize; j++) {
-                const row = centerRow + i - offset;
-                const col = centerCol + j - offset;
-
-                if (row >= 0 && row < matrix.length && col >= 0 && col < matrix[0].length) {
-                    subMatrix[i][j] = matrix[row][col];
-                }
-            }
-        }
-
-        return subMatrix;
-    }
-
-    function getMovementConstraints(node, selectedTube) {
-        const masks = [
-            {name: 'UCBC', mask: [[0, 1, 0], [0, 0, 0], [0, 1, 0]]},
-            {name: 'CRCL', mask: [[0, 0, 0], [1, 0, 1], [0, 0, 0]]},
-            {name: 'UL', mask: [[1, 1, 1], [1, 0, 0], [1, 0, 0]]},
-            {name: 'UR', mask: [[1, 1, 1], [0, 0, 1], [0, 0, 1]]},
-            {name: 'BL', mask: [[1, 0, 0], [1, 0, 0], [1, 1, 1]]},
-            {name: 'BR', mask: [[0, 0, 1], [0, 0, 1], [1, 1, 1]]}
-        ];
-
-        const modifiedNode = node.map(row => [...row]);
-        if (selectedTube) {
-            modifiedNode[selectedTube[0]][selectedTube[1]] = 0;
-        }
-
-        const movableCells = [];
-        const fillableCells = [];
-
-        for (let row = 0; row < modifiedNode.length; row++) {
-            for (let col = 0; col < modifiedNode[row].length; col++) {
-                if (modifiedNode[row][col] !== 0) {
-                    const isMovable = masks.some(({mask}) => {
-                        const subMatrix = getSubMatrix(modifiedNode, row, col, mask.length);
-                        return checkConstraintMask(subMatrix, mask);
-                    });
-
-                    if (isMovable) movableCells.push([row, col]);
-                } else {
-                    const isFilable = masks.some(({mask}) => {
-                        const subMatrix = getSubMatrix(modifiedNode, row, col, mask.length);
-                        return checkConstraintMask(subMatrix, mask);
-                    });
-
-                    if (isFilable) fillableCells.push([row, col]);
-                }
-            }
-        }
-
-        return {movableCells, fillableCells};
-    }
-
-    let initialRackList = [];
-    let goalPatternList = [];
-
-    //// Fetch JSON files for initialRack and goalPattern from GitHub
-    function fetchDataFromGitHub() {
-        const initialRackUrl = 'https://raw.githubusercontent.com/chenhaox/rearrangetube/refs/heads/main/state_list.json';
-        const goalPatternUrl = 'https://raw.githubusercontent.com/chenhaox/rearrangetube/refs/heads/main/goal_list.json';
-
-        Promise.all([fetch(initialRackUrl), fetch(goalPatternUrl)])
-            .then(responses => Promise.all(responses.map(response => response.json())))
-            .then(([initialRackData, goalPatternData]) => {
-                initialRackList = initialRackData;
-                goalPatternList = goalPatternData;
-                const randomRackIndex = Math.floor(Math.random() * initialRackList.length);
-                const randomGoalIndex = Math.floor(Math.random() * goalPatternList.length);
-                initialRack = initialRackData[randomRackIndex];
-                goalPattern = goalPatternData[randomGoalIndex];
-                renderRack();
-            })
-            .catch(error => {
-                console.error('Error fetching data from GitHub:', error);
-            });
-    }
-
-    fetchDataFromGitHub(); // Call this function when you want to load the data
-    // Add this near the existing variables
-    let moveHistory = [];
-
-    const tubeColors = {
-        0: null,
-        1: 'red',
-        2: 'blue',
-        3: 'green',
-        4: 'yellow',
-        5: 'purple',
-        6: 'orange'
-    };
-
-    let selectedCell = null;
-
-    function createTube(color) {
-        const tube = document.createElement('div');
-        tube.classList.add('tube', color);
-        return tube;
-    }
-
-    function showErrorMessage() {
-        const errorMessage = document.getElementById('moveErrorMessage');
-        errorMessage.style.display = 'block';
-        setTimeout(() => {
-            errorMessage.style.display = 'none';
-        }, 2000);
-    }
-
-    function renderRack() {
-        const rackContainer = document.getElementById('rack-container');
-        rackContainer.innerHTML = '';
-
-        // Determine movable tubes before selection
-        const preSelectionMovableCells = getMovementConstraints(initialRack).movableCells;
-
-        for (let row = 0; row < initialRack.length; row++) {
-            for (let col = 0; col < initialRack[row].length; col++) {
-                const cell = document.createElement('div');
-                cell.classList.add('rack-cell');
-
-                // Goal pattern background
-                if (goalPattern[row][col] !== 0) {
-                    cell.classList.add(`goal-background-${goalPattern[row][col]}`);
-                }
-
-                // Pre-selection highlighting for movable tubes
-                const isPreSelectionMovableCell = preSelectionMovableCells.some(
-                    ([r, c]) => r === row && c === col
-                );
-                if (isPreSelectionMovableCell) {
-                    cell.classList.add('highlight-movable');
-                }
-
-                // Constraints after selection
-                let constraints = {movableCells: [], fillableCells: []};
-                if (selectedCell) {
-                    constraints = getMovementConstraints(initialRack, selectedCell);
-
-                    const isMovableCell = constraints.movableCells.some(
-                        ([r, c]) => r === row && c === col
-                    );
-                    const isFillableCell = constraints.fillableCells.some(
-                        ([r, c]) => r === row && c === col
-                    );
-
-                    if (isMovableCell) cell.classList.add('highlight-movable');
-                    if (isFillableCell) cell.classList.add('highlight-destination');
-                }
-
-                cell.setAttribute('data-row', row);
-                cell.setAttribute('data-col', col);
-
-                if (initialRack[row][col] !== 0) {
-                    const tube = createTube(tubeColors[initialRack[row][col]]);
-                    cell.appendChild(tube);
-                }
-
-                cell.addEventListener('click', () => cellClickHandler(row, col));
-
-                if (selectedCell && selectedCell[0] === row && selectedCell[1] === col) {
-                    const tube = cell.querySelector('.tube');
-                    if (tube) {
-                        tube.classList.add('selected');
-                    }
-                }
-
-                rackContainer.appendChild(cell);
-            }
-        }
-    }
-
-    function cellClickHandler(row, col) {
-        const constraints = getMovementConstraints(initialRack, selectedCell);
-
-        if (!selectedCell) {
-            // Check if the selected cell is a movable cell
-            const isMovableCell = constraints.movableCells.some(
-                ([r, c]) => r === row && c === col
-            );
-
-            if (isMovableCell && initialRack[row][col] !== 0) {
-                selectedCell = [row, col];
-                renderRack();
-            }
-        } else {
-            const [selRow, selCol] = selectedCell;
-
-            // If clicking the same cell, deselect
-            if (selRow === row && selCol === col) {
-                selectedCell = null;
-                renderRack();
-                return;
-            }
-
-            // Check if the target cell is a valid fillable cell
-            const isValidMove = constraints.fillableCells.some(
-                ([r, c]) => r === row && c === col
-            );
-
-            if (isValidMove) {
-                // Save a copy of the current state before making the move for reward calculation
-                const state_current = JSON.parse(JSON.stringify(initialRack));
-                // Move the tube
-                initialRack[row][col] = initialRack[selRow][selCol];
-                initialRack[selRow][selCol] = 0;
-                const state_next = JSON.parse(JSON.stringify(initialRack));
-                // Compute reward
-                const finished = isDone(initialRack, goalPattern);
-                const reward = getRewardExp(finished, state_current, state_next, goalPattern);
-                // Record the move
-                const moveRecord = {
-                    from: {row: selRow, col: selCol},
-                    to: {row: row, col: col},
-                    timestamp: new Date().toISOString(),
-                    stateBefore: state_current,
-                    stateAfter: state_next
-                };
-                moveHistory.push(moveRecord);
-                updateHistoryUI(moveRecord);
-                // Check for goal completion
-                if (finished) {
-                    const successMessage = document.getElementById('successMessage');
-                    successMessage.style.display = 'block';
-                    setTimeout(() => {
-                        successMessage.style.display = 'none';
-                    }, 3000); // Display for 3 seconds
-                    downloadMoveHistory(initialRack, goalPattern, moveHistory); // Trigger the download
-                    // Clear moveHistory after downloading
-                    moveHistory = [];
-                }
-                selectedCell = null;
-                previousRack = JSON.parse(JSON.stringify(initialRack));
-                renderRack();
-            } else {
-                showErrorMessage();
-            }
-        }
-    }
-
-    // Modify createThumbnail to highlight moved tubes
-    function createThumbnail(state, highlightFrom, highlightTo) {
-        const tubeColors = {
-            0: null,
-            1: 'red',
-            2: 'blue',
-            3: 'green',
-            4: 'yellow',
-            5: 'purple',
-            6: 'orange'
-        };
-
-        const thumbnail = document.createElement('div');
-        thumbnail.classList.add('thumbnail-grid');
-
-        for (let r = 0; r < state.length; r++) {
-            for (let c = 0; c < state[r].length; c++) {
-                const cellValue = state[r][c];
-                const cellDiv = document.createElement('div');
-                cellDiv.classList.add('thumbnail-cell');
-                if (cellValue !== 0) {
-                    cellDiv.classList.add(`thumbnail-${tubeColors[cellValue]}`);
-                }
-
-                // Highlight if this cell is the from or to position
-                if ((highlightFrom && highlightFrom.row === r && highlightFrom.col === c) ||
-                    (highlightTo && highlightTo.row === r && highlightTo.col === c)) {
-                    cellDiv.classList.add('moved-tube');
-                }
-
-                thumbnail.appendChild(cellDiv);
-            }
-        }
-
-        return thumbnail;
-    }
-
-
-    // Add a function to update the History UI
-    // Update the updateHistoryUI function to remove the index and enlarge the Before/After thumbnails
-    // Update the updateHistoryUI function to place before/after thumbnails inside the moveElement div
-    function updateHistoryUI(moveRecord) {
-        const historyContainer = document.getElementById('historyContainer');
-
-        const moveWrapper = document.createElement('div');
-        moveWrapper.style.display = 'flex';
-        moveWrapper.style.flexDirection = 'column';
-        moveWrapper.style.marginBottom = '20px';
-
-        const moveHeader = document.createElement('div');
-        moveHeader.classList.add('move-header');
-
-        const moveElement = document.createElement('div');
-        moveElement.classList.add('move-element');
-        moveElement.innerHTML = `
-            From: (${moveRecord.from.row}, ${moveRecord.from.col})<br>
-            To: (${moveRecord.to.row}, ${moveRecord.to.col})<br>
-            <small>${moveRecord.timestamp}</small>
-        `;
-
-        // Thumbnails container for before and after states, merged with the moveElement div
-        const thumbnailsContainer = document.createElement('div');
-        thumbnailsContainer.classList.add('thumbnails-container');
-
-        const beforeWrapper = document.createElement('div');
-        beforeWrapper.classList.add('before-after-wrapper');
-        const beforeLabel = document.createElement('div');
-        beforeLabel.textContent = 'Before';
-        beforeLabel.classList.add('thumbnail-label');
-        beforeWrapper.appendChild(beforeLabel);
-        beforeWrapper.appendChild(createThumbnail(moveRecord.stateBefore, moveRecord.from, null));
-
-        const afterWrapper = document.createElement('div');
-        afterWrapper.classList.add('before-after-wrapper');
-        const afterLabel = document.createElement('div');
-        afterLabel.textContent = 'After';
-        afterLabel.classList.add('thumbnail-label');
-        afterWrapper.appendChild(afterLabel);
-        afterWrapper.appendChild(createThumbnail(moveRecord.stateAfter, null, moveRecord.to));
-
-        thumbnailsContainer.appendChild(beforeWrapper);
-        thumbnailsContainer.appendChild(afterWrapper);
-
-        moveElement.appendChild(thumbnailsContainer);
-        moveHeader.appendChild(moveElement);
-
-        moveWrapper.appendChild(moveHeader);
-        historyContainer.appendChild(moveWrapper);
-    }
-
-    document.getElementById('resetBtn').addEventListener('click', function () {
-        selectedCell = null;
-
-        // Reset the rack to the initial state
-        document.getElementById('resetBtn').addEventListener('click', function () {
-            selectedCell = null;
-
-            // Check if data is loaded
-            if (!initialRackList || initialRackList.length === 0 || !goalPatternList || goalPatternList.length === 0) {
-                console.error('Data not loaded yet');
-                showErrorMessage('Data not loaded yet');
-                return;
-            }
-
-            // Select random indices
-            const randomRackIndex = Math.floor(Math.random() * initialRackList.length);
-            const randomGoalIndex = Math.floor(Math.random() * goalPatternList.length);
-
-            // Update initial and goal patterns
-            initialRack = initialRackList[randomRackIndex];
-            goalPattern = goalPatternList[randomGoalIndex];
-
-            renderRack();
-
-            // Reset move history
-            moveHistory = [];
-            const historyContainer = document.getElementById('historyContainer');
-            if (historyContainer) {
-                historyContainer.innerHTML = '';
-            }
-            console.log('Move History Reset');
-        });
-    });
-    renderRack();
-</script>
-</body>
-</html>
+  </body>
+  </html>
