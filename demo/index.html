@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rack Arrangement Simulation</title>
+    <title>Rack Rearrangement Simulation</title>
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
     <style>
         /* Adjust some styling to make the page more visually appealing */
@@ -13,7 +13,7 @@
         }
 
         h2, h3 {
-            margin-bottom: 20px;
+            margin-bottom: 10px;
             font-weight: 600;
         }
 
@@ -140,7 +140,7 @@
         .rack-container {
             display: grid;
             grid-template-columns: repeat(6, 60px);
-            grid-template-rows: repeat(6, 60px);
+            grid-template-rows: repeat(4, 60px);
             gap: 5px;
             max-width: 400px;
             margin: 0 auto;
@@ -285,6 +285,144 @@
             background-color: #ff8c00;
         }
 
+        /* Tutorial Container */
+        .tutorial-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: #ffffff;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            width: 450px;
+            max-height: 400px;
+            overflow-y: auto;
+            z-index: 100;
+            transition: transform 0.3s ease-in-out;
+        }
+
+        .tutorial-container.minimized {
+            transform: translateY(95%);
+        }
+
+        .tutorial-container h4 {
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+
+        .tutorial-container p {
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .tutorial-toggle {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: #ddd;
+            border: none;
+            padding: 5px 10px;
+            cursor: pointer;
+            border-radius: 3px;
+            font-size: 12px;
+        }
+
+        .tutorial-highlight-destination {
+            border: 3px dashed #28a745;
+            position: relative;
+        }
+
+        .tutorial-highlight-destination::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 10px;
+            height: 10px;
+            background-color: rgba(40, 167, 69, 0.5);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .tutorial-highlight-movable {
+            position: relative;
+            border: 3px dashed #ffc107;
+        }
+
+        .tutorial-highlight-movable::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 25px;
+            height: 25px;
+            background-color: #ff6347;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+    .mask-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 40px);
+        grid-template-rows: repeat(3, 40px);
+        gap: 4px;
+    }
+    .mask-cell {
+        position: relative;
+        border: 3px solid #0a0a0a;
+        width: 40px;
+        height: 40px;
+        border-radius: 5px;
+    }
+
+    .mask-cell-empty {
+        border: 3px solid #0a0a0a;
+        width: 40px;
+        height: 40px;
+        border-radius: 5px;
+    }
+
+    .mask-cell::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 25px;
+            height: 25px;
+            background-color: rgba(125, 125, 125, 0.5);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+    .mask-cell-small {
+        position: relative;
+        border: 2px solid #0a0a0a;
+        width: 25px;
+        height: 25px;
+        border-radius: 5px;
+    }
+
+    .mask-cell-small::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 13px;
+            height: 13px;
+            background-color: rgba(125, 125, 125, 0.5);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+    .conditions-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+    }
+    .condition {
+        flex: 1 0 45%;
+    }
+
     </style>
 </head>
 <body>
@@ -311,7 +449,7 @@
         <!-- Right side: Existing layout -->
         <div class="col-md-9">
             <div class="container mt-5">
-                <h2 class="text-center">Rack Arrangement Task</h2>
+                <h2 class="text-center">Rack Rearrangement</h2>
                 <div class="row justify-content-center">
                     <div id="rack-container" class="rack-container">
                         <!-- Grid cells will be inserted here by JavaScript -->
@@ -325,7 +463,129 @@
     </div>
 </div>
 
+<!-- Tutorial Floating Container -->
+<div class="tutorial-container" id="tutorialContainer">
+    <button class="tutorial-toggle" id="toggleTutorialBtn">Minimize</button>
+    <h4>How to Play</h4>
+    <p>1. Select a tube to move by clicking on it.<br>
+        <!-- Add movable style to the cell for visual guidance -->
+        <span class="tutorial-highlight-movable"
+              style="display: inline-block; width: 40px; height: 40px; background-color: rgba(0, 0, 0, 0); border-radius: 5px; margin-top:10px;margin-right: 10px;;margin-left: 15px;"></span>
+        This cell has a tube and is movable.
+    </p>
+    <p>2. Choose an empty rack cell to place the tube.<br>
+        <!-- Add fillable style to show an empty cell -->
+        <span class="tutorial-highlight-destination"
+              style="display: inline-block; width: 40px; height: 40px; background-color: rgba(0, 0, 0, 0); border-radius: 5px; margin-top:10px;margin-right: 10px;;margin-left: 15px;"></span>
+        This cell is fillable where the tube can be placed.
+    </p>
+    <p>3. Try to arrange the tubes to match the goal pattern.<br></p>
+    <h5>Pick/Place Tube Constraints</h5>
+    <p>Only tubes that are in feasible slots can be moved. And only feasible slots can be filled with tubes. <strong>A slot is feasible only if
+        one of following conditions is satisfied:</strong></p>
+    <!-- Displaying Conditions with Mask Visualizations -->
+    <div class="conditions-container">
+        <div class="condition">
+            <h6>Condition 1:</h6>
+            <p><strong>Description:</strong> A slot (at central) is movable/fillable if its surrounding slots are empty along a central vertical axis.</p>
+            <div class="mask-grid">
+                <div class="mask-cell"></div>
+                <div class="mask-cell"></div>
+                <div class="mask-cell"></div>
+                <div class="mask-cell-empty" style="background-color: rgba(0, 0, 0, 0);"></div>
+                <div class="tutorial-highlight-movable" style="background-color: rgba(0, 0, 0, 0);"></div>
+                <div class="mask-cell-empty" style="background-color: rgba(0, 0, 0, 0);"></div>
+                <div class="mask-cell"></div>
+                <div class="mask-cell"></div>
+                <div class="mask-cell"></div>
+            </div>
+        </div>
+        <div class="condition">
+            <h6>Condition 2:</h6>
+            <p><strong>Description:</strong> A slot (at central) is movable/fillable if its surrounding slots are empty along a central horizontal axis. </p>
+            <div class="mask-grid">
+                <div class="mask-cell"></div>
+                <div class="mask-cell-empty"></div>
+                <div class="mask-cell"></div>
+                <div class="mask-cell" style="background-color: rgba(0, 0, 0, 0);"></div>
+                <div class="tutorial-highlight-movable" style="background-color: rgba(0, 0, 0, 0);"></div>
+                <div class="mask-cell" style="background-color: rgba(0, 0, 0, 0);"></div>
+                <div class="mask-cell"></div>
+                <div class="mask-cell-empty"></div>
+                <div class="mask-cell"></div>
+            </div>
+        </div>
+        <div class="condition">
+            <h6>Condition 3:</h6>
+            <p><strong>Description:</strong> A slot (at central) is movable/fillable if the upper-left corner of its surrounding slots are empty.</p>
+            <div class="mask-grid">
+                <div class="mask-cell-empty"></div>
+                <div class="mask-cell-empty"></div>
+                <div class="mask-cell-empty"></div>
+                <div class="mask-cell-empty" style="background-color: rgba(0, 0, 0, 0);"></div>
+                <div class="tutorial-highlight-movable" style="background-color: rgba(0, 0, 0, 0);"></div>
+                <div class="mask-cell" style="background-color: rgba(0, 0, 0, 0);"></div>
+                <div class="mask-cell-empty"></div>
+                <div class="mask-cell"></div>
+                <div class="mask-cell"></div>
+            </div>
+        </div>
+        <div class="condition">
+            <h6>Condition 4: </h6>
+            <p><strong>Description:</strong> A slot (at central) is movable/fillable if the upper-right corner of its surrounding slots are empty.</p>
+            <div class="mask-grid">
+                <div class="mask-cell-empty"></div>
+                <div class="mask-cell-empty"></div>
+                <div class="mask-cell-empty"></div>
+                <div class="mask-cell" style="background-color: rgba(0, 0, 0, 0);"></div>
+                <div class="tutorial-highlight-movable" style="background-color: rgba(0, 0, 0, 0);"></div>
+                <div class="mask-cell-empty" style="background-color: rgba(0, 0, 0, 0);"></div>
+                <div class="mask-cell"></div>
+                <div class="mask-cell"></div>
+                <div class="mask-cell-empty"></div>
+            </div>
+        </div>
+        <div class="condition">
+            <h6>Condition 5: </h6>
+            <p><strong>Description:</strong> A slot (at central) is movable/fillable if the bottom-right corner of its surrounding slots are empty.</p>
+            <div class="mask-grid">
+                <div class="mask-cell"></div>
+                <div class="mask-cell"></div>
+                <div class="mask-cell-empty"></div>
+                <div class="mask-cell" style="background-color: rgba(0, 0, 0, 0);"></div>
+                <div class="tutorial-highlight-movable" style="background-color: rgba(0, 0, 0, 0);"></div>
+                <div class="mask-cell-empty" style="background-color: rgba(0, 0, 0, 0);"></div>
+                <div class="mask-cell-empty"></div>
+                <div class="mask-cell-empty"></div>
+                <div class="mask-cell-empty"></div>
+            </div>
+        </div>
+        <div class="condition">
+            <h6>Condition 6: BR</h6>
+            <p><strong>Description:</strong> A slot (at central) is movable/fillable if the bottom-left corner of its surrounding slots are empty.</p>
+            <div class="mask-grid">
+                <div class="mask-cell-empty"></div>
+                <div class="mask-cell"></div>
+                <div class="mask-cell"></div>
+                <div class="mask-cell-empty" style="background-color: rgba(0, 0, 0, 0);"></div>
+                <div class="tutorial-highlight-movable" style="background-color: rgba(0, 0, 0, 0);"></div>
+                <div class="mask-cell" style="background-color: rgba(0, 0, 0, 0);"></div>
+                <div class="mask-cell-empty"></div>
+                <div class="mask-cell-empty"></div>
+                <div class="mask-cell-empty"></div>
+            </div>
+        </div>
+        <p><strong>Note:</strong> <span class="mask-cell-small" style="display: inline-block;"></span> represents a slot that may contain a tube or be empty.</p>
+    </div>
+</div>
+
 <script>
+    // Toggle tutorial visibility
+    document.getElementById('toggleTutorialBtn').addEventListener('click', function () {
+        const tutorialContainer = document.getElementById('tutorialContainer');
+        tutorialContainer.classList.toggle('minimized');
+        this.textContent = tutorialContainer.classList.contains('minimized') ? 'Maximize' : 'Minimize';
+    });
     // Movement constraint masks
     const MASKS = {
         UCBC: [[0, 1, 0], [0, 0, 0], [0, 1, 0]],
